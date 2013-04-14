@@ -45,7 +45,7 @@ static const char* STR_NOON = "noon";
 static const char* STR_MIDNIGHT = "midnight";
 static const char* STR_OH = "o' ";
 
-static size_t append_number(char* words, int num) {
+static size_t append_number(char* words, int num,int hours) {
   int tens_val = num / 10 % 10;
   int ones_val = num % 10;
 
@@ -63,7 +63,12 @@ static size_t append_number(char* words, int num) {
       len += 1;
     }
   }
-
+  if(hours == 1){
+   if (ones_val > 0 || num == 0) {
+    strcat(words, ONES[ones_val]);
+    len += strlen(ONES[ones_val]);
+    }
+  }
   return len;
 }
 static size_t append_minutes_number(char* words, int num) {
@@ -112,7 +117,7 @@ void fuzzy_minutes_to_words(int hours, int minutes, char* words, size_t length) 
       remaining -= append_string(words, remaining, " ");
       remaining -= append_string(words, remaining, STR_OH);
     }
-      remaining -= append_number(words, fuzzy_minutes);
+      remaining -= append_number(words, fuzzy_minutes,0);
  
   }
 }
@@ -147,9 +152,9 @@ void fuzzy_hours_to_words(int hours, int minutes, char* words, size_t length) {
   } else if (fuzzy_hours == 12 && fuzzy_minutes == 0) {
     remaining -= append_string(words, remaining, STR_NOON);
   } else if (fuzzy_hours == 0){
-    remaining -= append_number(words, 12);
+    remaining -= append_number(words, 12,1);
   }else {
     //get hour
-    remaining -= append_number(words, fuzzy_hours % 12);
+    remaining -= append_number(words, fuzzy_hours % 12,1);
   }
 }
