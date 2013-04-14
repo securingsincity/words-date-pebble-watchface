@@ -14,35 +14,88 @@ PBL_APP_INFO(MY_UUID,
 Window window;
 TextLayer text_date_layer;
 
-static struct CommonWordsData {
+typedef struct CommonWordsData {
   TextLayer label;
   char buffer[BUFFER_SIZE];
-} s_data;
+} CommonWordsData;
 
-static struct CommonWordsMinutesData {
-  TextLayer label;
-  char buffer[BUFFER_SIZE];
-} s_data_minutes;
+static CommonWordsData s_data;
+static CommonWordsData s_data_minutes;
+static CommonWordsData s_data_sminutes;
+static CommonWordsData date;
 
-static struct CommonWordsSMinutesData {
-  TextLayer label;
-  char buffer[BUFFER_SIZE];
-} s_data_sminutes;
+#define TIME_SLOT_ANIMATION_DURATION 700
 
-static void update_time(PblTm* t) {
-  fuzzy_hours_to_words(t->tm_hour, t->tm_min, s_data.buffer, BUFFER_SIZE);
-  fuzzy_minutes_to_words(t->tm_hour, t->tm_min, s_data_minutes.buffer, BUFFER_SIZE);
-  fuzzy_sminutes_to_words(t->tm_hour, t->tm_min, s_data_sminutes.buffer, BUFFER_SIZE);
-  text_layer_set_text(&s_data.label, s_data.buffer);
-  text_layer_set_text(&s_data_minutes.label, s_data_minutes.buffer);
-  text_layer_set_text(&s_data_sminutes.label, s_data_sminutes.buffer);
+void slide_out(PropertyAnimation *animation, CommonWordsData *layer) {
+  GRect from_frame = layer_get_frame(&layer->label.layer);
+
+  GRect to_frame = GRect(-window.layer.frame.size.w, from_frame.origin.y,
+                          window.layer.frame.size.w, from_frame.size.h);
+
+  property_animation_init_layer_frame(animation, &layer->label.layer, NULL, &to_frame);
+  animation_set_duration(&animation->animation, TIME_SLOT_ANIMATION_DURATION);
+  animation_set_curve(&animation->animation, AnimationCurveEaseIn);
+}
+
+void slide_in(PropertyAnimation *animation, CommonWordsData *layer) {
+  GRect to_frame = layer_get_frame(&layer->label.layer);
+  GRect from_frame = GRect(2*window.layer.frame.size.w, to_frame.origin.y,
+                          window.layer.frame.size.w, to_frame.size.h);
+
+  layer_set_frame(&layer->label.layer, from_frame);
+  text_layer_set_text(&layer->label, layer->buffer);
+  property_animation_init_layer_frame(animation, &layer->label.layer, NULL, &to_frame);
+  animation_set_duration(&animation->animation, TIME_SLOT_ANIMATION_DURATION);
+  animation_set_curve(&animation->animation, AnimationCurveEaseOut);
+}
+
+void slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context) {
+  CommonWordsData *layer = (CommonWordsData *)context;
+  layer->label.layer.frame.origin.x = 0;
+  static PropertyAnimation animation;
+  slide_in(&animation, layer);
+  animation_schedule(&animation.animation);
 }
 
 static void handle_minute_tick(AppContextRef app_ctx, PebbleTickEvent* e) {
-  update_time(e->tick_time);
-  static char date_text[] = "Xxxxxxxxx 00";
-  string_format_time(date_text, sizeof(date_text), "%B %e", e->tick_time);
-  text_layer_set_text(&text_date_layer, date_text);
+  PblTm *t = e->tick_time;
+  if((e->units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
+    fuzzy_sminutes_to_words(t->tm_hour, t->tm_min, s_data_sminutes.buffer, BUFFER_SIZE);
+    static PropertyAnimation animation2;
+    slide_out(&animation2, &s_data_sminutes);
+    animation_set_handlers(&animation2.animation, (AnimationHandlers){
+      .stopped = (AnimationStoppedHandler)slide_out_animation_stopped
+    }, (void *) &s_data_sminutes);
+    animation_schedule(&animation2.animation);
+    if (t->tm_min % 10 == 0 || t->tm_min < 20) {
+      fuzzy_minutes_to_words(t->tm_hour, t->tm_min, s_data_minutes.buffer, BUFFER_SIZE);
+      static PropertyAnimation animation1;
+      slide_out(&animation1, &s_data_minutes);
+      animation_set_handlers(&animation1.animation, (AnimationHandlers){
+        .stopped = (AnimationStoppedHandler)slide_out_animation_stopped
+      }, (void *) &s_data_minutes);
+      animation_schedule(&animation1.animation);
+    }
+  }
+  if ((e->units_changed & HOUR_UNIT) == HOUR_UNIT) {
+    fuzzy_hours_to_words(t->tm_hour, t->tm_min, s_data.buffer, BUFFER_SIZE);
+    static PropertyAnimation animation3;
+    slide_out(&animation3, &s_data);
+    animation_set_handlers(&animation3.animation, (AnimationHandlers){
+      .stopped = (AnimationStoppedHandler)slide_out_animation_stopped
+    }, (void *) &s_data);
+    animation_schedule(&animation3.animation);
+  }
+  if ((e->units_changed & DAY_UNIT) == DAY_UNIT) {
+    strcpy(date.buffer,"Xxxxxxxxx 00");
+    string_format_time(date.buffer, sizeof(date.buffer), "%B %e", e->tick_time);
+    static PropertyAnimation animation4;
+    slide_out(&animation4, &date);
+    animation_set_handlers(&animation4.animation, (AnimationHandlers){
+      .stopped = (AnimationStoppedHandler)slide_out_animation_stopped
+    }, (void *) &date);
+    animation_schedule(&animation4.animation);
+  }
 }
 
 void handle_init(AppContextRef ctx) {
@@ -77,17 +130,36 @@ void handle_init(AppContextRef ctx) {
 
 //Date
 
-  text_layer_init(&text_date_layer, GRect(7, 120, 144-7, 168-120));
-  text_layer_set_text_color(&text_date_layer, GColorWhite);
-  text_layer_set_background_color(&text_date_layer, GColorBlack);
-  text_layer_set_font(&text_date_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
-  layer_add_child(&window.layer, &text_date_layer.layer);
+  text_layer_init(&date.label, GRect(0, 120, window.layer.frame.size.w, 48));
+  text_layer_set_text_color(&date.label, GColorWhite);
+  text_layer_set_background_color(&date.label, GColorBlack);
+  text_layer_set_font(&date.label, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
+  text_layer_set_text_alignment(&date.label, GTextAlignmentLeft);
+  layer_add_child(&window.layer, &date.label.layer);
 
+//show your face
   PblTm t;
   get_time(&t);
-  update_time(&t);
-}
 
+  fuzzy_sminutes_to_words(t.tm_hour, t.tm_min, s_data_sminutes.buffer, BUFFER_SIZE);
+  static PropertyAnimation animation1;
+  slide_in(&animation1, &s_data_minutes);
+  animation_schedule(&animation1.animation);
+  fuzzy_minutes_to_words(t.tm_hour, t.tm_min, s_data_minutes.buffer, BUFFER_SIZE);
+  static PropertyAnimation animation2;
+  slide_in(&animation2, &s_data_sminutes);
+  animation_schedule(&animation2.animation);
+  fuzzy_hours_to_words(t.tm_hour, t.tm_min, s_data.buffer, BUFFER_SIZE);
+  static PropertyAnimation animation3;
+  slide_in(&animation3, &s_data);
+  animation_schedule(&animation3.animation);
+  strcpy(date.buffer,"Xxxxxxxxx 00");
+  string_format_time(date.buffer, sizeof(date.buffer), "%B %e", &t);
+  static PropertyAnimation animation4;
+  slide_in(&animation4, &date);
+  animation_schedule(&animation4.animation);
+
+}
 
 void pbl_main(void *params) {
  PebbleAppHandlers handlers = {
