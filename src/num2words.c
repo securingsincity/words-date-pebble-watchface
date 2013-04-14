@@ -1,5 +1,4 @@
 #include "num2words.h"
-#include "string.h"
 
 static const char* const ONES[] = {
   "",
@@ -72,7 +71,7 @@ static size_t append_number(char* words, int num,int hours) {
   return len;
 }
 static size_t append_minutes_number(char* words, int num) {
-  int tens_val = num / 10 % 10;
+  int tens_val = num / 10;
   int ones_val = num % 10;
 
   size_t len = 0;
@@ -153,7 +152,7 @@ void fuzzy_hours_to_words(int hours, int minutes, char* words, size_t length) {
     remaining -= append_string(words, remaining, STR_NOON);
   } else if (fuzzy_hours == 0){
     remaining -= append_number(words, 12,1);
-  }else {
+  } else {
     //get hour
     remaining -= append_number(words, fuzzy_hours % 12,1);
   }
