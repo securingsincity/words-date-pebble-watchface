@@ -58,9 +58,9 @@ static size_t append_number(char* words, int num) {
   }
   strcat(words, TENS[tens_val]);
   len += strlen(TENS[tens_val]);
-  if (ones_val > 0) {
-    strcat(words, " ");
-    len += 1;
+  if (num < 10) {
+    strcat(words, ONES[ones_val]);
+    return strlen(ONES[ones_val]);
   }
 return len;
 }
@@ -135,7 +135,7 @@ void fuzzy_hours_to_words(PblTm *t, char* words) {
   //is it noon?
   } else if (fuzzy_hours == 12 && fuzzy_minutes == 0) {
     remaining -= append_string(words, remaining, STR_NOON);
-  } else if (fuzzy_hours == 0){
+  } else if (fuzzy_hours == 0  || fuzzy_hours == 12){
     remaining -= append_number(words, 12);
   } else {
     //get hour
