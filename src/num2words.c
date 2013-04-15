@@ -131,12 +131,10 @@ void fuzzy_hours_to_words(PblTm *t, char* words) {
   if (fuzzy_hours == 0 && fuzzy_minutes == 0) {
     remaining -= append_string(words, remaining, STR_MID);
   //is it noon?
-  } else if (fuzzy_hours == 12) {
-    if(fuzzy_minutes == 0) {
-      remaining -= append_string(words, remaining, STR_NOON);
-    } else {
-      remaining -= append_number(words, 12);
-    }
+  } else if (fuzzy_hours == 12 && fuzzy_minutes == 0) {
+    remaining -= append_string(words, remaining, STR_NOON);
+  } else if (fuzzy_hours == 0  || fuzzy_hours == 12){
+    remaining -= append_number(words, 12);
   } else {
     //get hour
     remaining -= append_number(words, fuzzy_hours % 12);
