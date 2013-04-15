@@ -94,8 +94,8 @@ static void handle_minute_tick(AppContextRef app_ctx, PebbleTickEvent* e) {
     animation_schedule(&s_data.out_animation->animation);
   }
   if ((e->units_changed & DAY_UNIT) == DAY_UNIT) {
-    strcpy(date.buffer, "Xxxxxxxxx 00");
-    string_format_time(date.buffer, sizeof(date.buffer), "%B %e", e->tick_time);
+    strcpy(date.buffer, "Xxx Xxxxxxxxx 00");
+    string_format_time(date.buffer, sizeof(date.buffer), "%a %B %e", e->tick_time);
     slide_out(date.out_animation, &date);
     animation_set_handlers(&date.out_animation->animation, (AnimationHandlers){
       .stopped = (AnimationStoppedHandler)slide_out_animation_stopped
