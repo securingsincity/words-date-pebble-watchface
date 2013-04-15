@@ -58,7 +58,7 @@ static size_t append_number(char* words, int num) {
   }
   strcat(words, TENS[tens_val]);
   len += strlen(TENS[tens_val]);
-  if (num < 10) {
+  if (tens_val < 1) {
     strcat(words, ONES[ones_val]);
     return strlen(ONES[ones_val]);
   }
@@ -89,7 +89,7 @@ void fuzzy_minutes_to_words(PblTm *t, char* words) {
   memset(words, 0, BUFFER_SIZE);
 
   //Is it midnight? or noon
-  if (!(fuzzy_hours == 0 && fuzzy_minutes == 0) && !(fuzzy_hours == 12 && fuzzy_minutes == 0)){
+  if (fuzzy_minutes != 0 && !(fuzzy_hours == 12 || fuzzy_hours == 0)) {
     //is it the top of the hour?
     if(fuzzy_minutes == 0){
       remaining -= append_string(words, remaining, STR_OH_CLOCK);
@@ -99,7 +99,7 @@ void fuzzy_minutes_to_words(PblTm *t, char* words) {
     } else {
       remaining -= append_number(words, fuzzy_minutes);
     }
-  } else {
+  } else if (fuzzy_hours == 0) {
     remaining -= append_string(words, remaining, STR_NIGHT);
   }
 }
@@ -112,12 +112,10 @@ void fuzzy_sminutes_to_words(PblTm *t, char* words) {
   memset(words, 0, BUFFER_SIZE);
 
   if (10 < fuzzy_minutes && fuzzy_minutes < 20) {
-    if (!(11 == fuzzy_minutes ||  12 == fuzzy_minutes ||
-      15 == fuzzy_minutes || 13 == fuzzy_minutes)) {
+    if (fuzzy_minutes > 13 && 15 != fuzzy_minutes) {
         strcat(words, STR_TEEN);
       }
-  } else if (!(fuzzy_hours == 0 && fuzzy_minutes == 0)
-    && !(fuzzy_hours == 12 && fuzzy_minutes == 0)){
+  } else if (fuzzy_minutes != 0 && !(fuzzy_hours == 12 || fuzzy_hours == 0)) {
       remaining -= append_minutes_number(words, fuzzy_minutes);
   }
 }
@@ -133,16 +131,18 @@ void fuzzy_hours_to_words(PblTm *t, char* words) {
   if (fuzzy_hours == 0 && fuzzy_minutes == 0) {
     remaining -= append_string(words, remaining, STR_MID);
   //is it noon?
-  } else if (fuzzy_hours == 12 && fuzzy_minutes == 0) {
-    remaining -= append_string(words, remaining, STR_NOON);
-  } else if (fuzzy_hours == 0  || fuzzy_hours == 12){
-    remaining -= append_number(words, 12);
+  } else if (fuzzy_hours == 12) {
+    if(fuzzy_minutes == 0) {
+      remaining -= append_string(words, remaining, STR_NOON);
+    } else {
+      remaining -= append_number(words, 12);
+    }
   } else {
     //get hour
     remaining -= append_number(words, fuzzy_hours % 12);
   }
 }
 
-void fuzzy_date(PblTm *t, char* words) {
-  string_format_time(words, BUFFER_SIZE, "%B %e", t);
+void fuzzy_dates_to_words(PblTm *t, char* words) {
+  string_format_time(words, 7, DATE_FORMAT, t);
 }
