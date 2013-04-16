@@ -44,6 +44,9 @@ static const char* STR_NOON = "noon";
 static const char* STR_MID = "mid";
 static const char* STR_NIGHT = "night";
 static const char* STR_TEEN = "teen";
+#if !DAY
+static const char* STR_OH = "oh";
+#endif
 
 static size_t append_number(char* words, int num) {
   int tens_val = num / 10;
