@@ -89,7 +89,7 @@ static void handle_minute_tick(AppContextRef app_ctx, PebbleTickEvent* e) {
     }
   }
   if ((e->units_changed & HOUR_UNIT) == HOUR_UNIT ||
-        ((t->tm_hour == 00 || t->tm_hour == 12) && t->tm_min == 01)) {
+        ((t->tm_hour == 00 || t->tm_hour == 12) && t->tm_min == 1)) {
     update_layer(&layers[2]);
   }
   if ((e->units_changed & DAY_UNIT) == DAY_UNIT) {
