@@ -26,7 +26,7 @@ static struct CommonWordsData layers[NUM_LAYERS] =
 {{ .update = &fuzzy_sminutes_to_words },
  { .update = &fuzzy_minutes_to_words },
  { .update = &fuzzy_hours_to_words },
- { .update = &fuzzy_dates_to_words, .buffer = "Xxxxxxxx 00" }};
+ { .update = &fuzzy_dates_to_words}};
 
 static GFont light;
 static GFont bold;
@@ -161,3 +161,5 @@ void pbl_main(void *params) {
   };
   app_event_loop(params, &handlers);
 }
+
+
