@@ -142,5 +142,5 @@ void fuzzy_hours_to_words(PblTm *t, char* words) {
 }
 
 void fuzzy_dates_to_words(PblTm *t, char* words) {
-  string_format_time(words, BUFFER_SIZE, DATE_FORMAT, t);
+  string_format_time(words, 7, DATE_FORMAT, t);
 }
