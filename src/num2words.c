@@ -93,6 +93,10 @@ void fuzzy_minutes_to_words(PblTm *t, char* words) {
     //is it the top of the hour?
     if(fuzzy_minutes == 0){
       remaining -= append_string(words, remaining, STR_OH_CLOCK);
+#if !DAY
+    } else if(fuzzy_minutes < 10){     //is it before ten minutes into the hour
+      remaining -= append_string(words, remaining, STR_OH);
+#endif
     } else {
       remaining -= append_number(words, fuzzy_minutes);
     }
